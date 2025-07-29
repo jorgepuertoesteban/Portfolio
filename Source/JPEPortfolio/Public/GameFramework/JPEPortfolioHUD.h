@@ -21,8 +21,6 @@ class JPEPORTFOLIO_API AJPEPortfolioHUD :
 public:
 	AJPEPortfolioHUD();
 
-	void CreateWidgetsPossessedPawn();
-
 	
 #pragma region IFocusTracerHUDInterface
 
@@ -33,6 +31,7 @@ protected:
 	UFocusTracerWidget* FocusTracerPawnWidget;
 
 public:
+	virtual void ShowFocusTraceInterface() override;
 	virtual void HideFocusTraceInterface() override;
 
 #pragma endregion

@@ -11,7 +11,7 @@ AJPEPortfolioHUD::AJPEPortfolioHUD() : Super()
 	PrimaryActorTick.bStartWithTickEnabled = false;
 }
 
-void AJPEPortfolioHUD::CreateWidgetsPossessedPawn()
+void AJPEPortfolioHUD::ShowFocusTraceInterface()
 {
 	if (FocusTracerPawnWidget)
 	{

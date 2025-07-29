@@ -20,4 +20,5 @@ class IFocusTracerHUDInterface
 
 public:
 	virtual void HideFocusTraceInterface() = 0;
+	virtual void ShowFocusTraceInterface() = 0;
 };

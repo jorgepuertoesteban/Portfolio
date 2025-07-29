@@ -54,6 +54,8 @@ public:
 	/** Constructor */
 	AJPEPortfolioCharacter();	
 
+	virtual void Restart() override;
+
 protected:
 
 	/** Initialize input action bindings */

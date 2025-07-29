@@ -10,6 +10,9 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "GameFramework/HUD.h"
+
+#include "Interfaces/FocusTracerHUDInterface.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -49,6 +52,20 @@ AJPEPortfolioCharacter::AJPEPortfolioCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named JPEPortfolioCharacter (to avoid direct content references in C++)
+}
+
+void AJPEPortfolioCharacter::Restart()
+{
+	Super::Restart();
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC && PC->IsLocalController())
+	{
+		if (IFocusTracerHUDInterface* FocusTracerHUD = Cast<IFocusTracerHUDInterface>(PC->GetHUD()))
+		{
+			FocusTracerHUD->ShowFocusTraceInterface();
+		}
+	}
 }
 
 void AJPEPortfolioCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
