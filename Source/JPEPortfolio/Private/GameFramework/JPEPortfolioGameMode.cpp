@@ -1,6 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "JPEPortfolioGameMode.h"
+#include "GameFramework/JPEPortfolioGameMode.h"
 
 AJPEPortfolioGameMode::AJPEPortfolioGameMode()
 {

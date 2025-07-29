@@ -1,4 +1,4 @@
-// Created by Bionic Ape. All Rights Reserved.
+// Created by Jorge Puerto. All Rights Reserved.
 
 
 #include "Components/FocusTracerPawnComponent.h"

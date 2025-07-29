@@ -1,4 +1,4 @@
-// Created by Bionic Ape. All Rights Reserved.
+// Created by Jorge Puerto. All Rights Reserved.
 
 #pragma once
 
@@ -10,7 +10,7 @@ class APointAndClickCamera;
 /**
  * 
  */
-UCLASS(Config = BionicApe)
+UCLASS(Config = Focus)
 class FOCUSINTERACTIONS_API UFocusInteractionsWorldSubsystem : public UWorldSubsystem
 {
 	GENERATED_BODY()

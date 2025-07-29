@@ -8,6 +8,7 @@
 
 class UInputMappingContext;
 class UFocusTracerComponent;
+class UInputAction;
 
 /**
  *  Basic PlayerController class for a third person game
@@ -23,6 +24,15 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Focus")
 	UFocusTracerComponent* FocusTracerComponent;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* FocusAction1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* FocusAction2;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* FocusAction3;
 
 protected:
 
@@ -37,5 +47,9 @@ protected:
 
 	/** Input mapping context setup */
 	virtual void SetupInputComponent() override;
+
+	virtual void Action1Pressed();
+	virtual void Action2Pressed();
+	virtual void Action3Pressed();
 
 };

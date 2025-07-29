@@ -1,4 +1,4 @@
-// Created by Bionic Ape. All rights reserved.
+// Created by Jorge Puerto. All rights reserved.
 
 #include "Components/FocusComponent.h"
 #include "ActionsSet.h"

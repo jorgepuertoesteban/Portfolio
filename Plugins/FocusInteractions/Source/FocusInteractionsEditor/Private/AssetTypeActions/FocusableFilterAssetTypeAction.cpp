@@ -1,4 +1,4 @@
-// Created by Bionic Ape. All rights reserved.
+// Created by Jorge Puerto. All rights reserved.
 
 #include "FocusableFilterAssetTypeAction.h"
 // Runtime Module
