@@ -86,6 +86,7 @@ void AJPEPortfolioCharacter::PossessedBy(AController* NewController)
 void AJPEPortfolioCharacter::UnPossessed()
 {
 	CameraBoom->SetComponentTickEnabled(false);
+	GetCharacterMovement()->Velocity = FVector::ZeroVector;
 	Super::UnPossessed();
 }
 
