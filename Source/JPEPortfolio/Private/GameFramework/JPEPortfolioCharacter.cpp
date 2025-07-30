@@ -13,6 +13,8 @@
 #include "GameFramework/HUD.h"
 
 #include "Interfaces/FocusTracerHUDInterface.h"
+#include "Components/FocusableComponent.h"
+#include "Components/DecalComponent.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -50,8 +52,14 @@ AJPEPortfolioCharacter::AJPEPortfolioCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
-	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
-	// are set in the derived blueprint asset named JPEPortfolioCharacter (to avoid direct content references in C++)
+	FocusedDecalComp = CreateDefaultSubobject<UDecalComponent>(TEXT("FocusedDecalComp"));
+	FocusedDecalComp->SetupAttachment(GetMesh());
+	FocusedDecalComp->SetVisibility(false);
+
+	FocusableComp = CreateDefaultSubobject<UFocusableComponent>(TEXT("FocusableComp"));
+	FocusableComp->OnStartFocusDelegate.AddDynamic(this, &AJPEPortfolioCharacter::OnStartFocus);
+	FocusableComp->OnEndFocusDelegate.AddDynamic(this, &AJPEPortfolioCharacter::OnEndFocus);
+
 }
 
 void AJPEPortfolioCharacter::Restart()
@@ -67,6 +75,20 @@ void AJPEPortfolioCharacter::Restart()
 		}
 	}
 }
+
+void AJPEPortfolioCharacter::PossessedBy(AController* NewController)
+{
+	CameraBoom->SetComponentTickEnabled(true);
+	Super::PossessedBy(NewController);
+}
+
+
+void AJPEPortfolioCharacter::UnPossessed()
+{
+	CameraBoom->SetComponentTickEnabled(false);
+	Super::UnPossessed();
+}
+
 
 void AJPEPortfolioCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -148,4 +170,14 @@ void AJPEPortfolioCharacter::DoJumpEnd()
 {
 	// signal the character to stop jumping
 	StopJumping();
+}
+
+void AJPEPortfolioCharacter::OnStartFocus(const FFocusInfo FocusTraceInfo)
+{
+	FocusedDecalComp->SetVisibility(true);
+}
+
+void AJPEPortfolioCharacter::OnEndFocus()
+{
+	FocusedDecalComp->SetVisibility(false);
 }

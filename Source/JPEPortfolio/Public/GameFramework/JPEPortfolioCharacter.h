@@ -5,11 +5,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+#include "Interfaces/FocusableComponentOwner.h"
 #include "JPEPortfolioCharacter.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
 class UInputAction;
+class UFocusableComponent;
+class UDecalComponent;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -19,7 +22,10 @@ DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
  *  Implements a controllable orbiting camera
  */
 UCLASS(abstract)
-class AJPEPortfolioCharacter : public ACharacter
+class AJPEPortfolioCharacter :
+	public ACharacter,
+	public IFocusableComponentOwner
+
 {
 	GENERATED_BODY()
 
@@ -30,6 +36,12 @@ class AJPEPortfolioCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Focus, meta = (AllowPrivateAccess = "true"))
+	UFocusableComponent* FocusableComp;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Focus, meta = (AllowPrivateAccess = "true"))
+	UDecalComponent* FocusedDecalComp;
 	
 protected:
 
@@ -55,6 +67,9 @@ public:
 	AJPEPortfolioCharacter();	
 
 	virtual void Restart() override;
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void UnPossessed() override;
+
 
 protected:
 
@@ -94,5 +109,18 @@ public:
 
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+#pragma region IFocusableComponentOwner
+public:
+	virtual UFocusableComponent* GetFocusableComponent_Implementation() override { return FocusableComp; }
+#pragma endregion
+
+protected:
+
+	UFUNCTION()
+	void OnStartFocus(const FFocusInfo FocusTraceInfo);
+
+	UFUNCTION()
+	void OnEndFocus();
 };
 

@@ -19,6 +19,11 @@ class AJPEPortfolioPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+public:
+
+	UPROPERTY(EditAnywhere, Category = "Focus")
+	FViewTargetTransitionParams DefaultCameraTransitionParams;
+
 	
 protected:
 
@@ -42,6 +47,9 @@ protected:
 
 public:
 	AJPEPortfolioPlayerController();
+
+	virtual void SetViewTarget(class AActor* NewViewTarget, FViewTargetTransitionParams TransitionParams) override;
+
 
 protected:
 

@@ -13,6 +13,12 @@ AJPEPortfolioPlayerController::AJPEPortfolioPlayerController()
 	FocusTracerComponent = CreateDefaultSubobject<UFocusTracerComponent>(TEXT("FocusTracerComponent"));
 }
 
+void AJPEPortfolioPlayerController::SetViewTarget(class AActor* NewViewTarget, FViewTargetTransitionParams TransitionParams)
+{
+	Super::SetViewTarget(NewViewTarget, DefaultCameraTransitionParams);
+}
+
+
 void AJPEPortfolioPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
