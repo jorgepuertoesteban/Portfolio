@@ -11,7 +11,7 @@ void F[Module]EditorModuleModule::StartupModule()
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
 
-	const EAssetTypeCategories::Type AssetCategoryBit = AssetTools.RegisterAdvancedAssetCategory(FName(TEXT("JPEEditor")), LOCTEXT("JPEEditor", "Bionic Ape"));
+	const EAssetTypeCategories::Type AssetCategoryBit = AssetTools.RegisterAdvancedAssetCategory(FName(TEXT("JPEEditor")), LOCTEXT("JPEEditor", "JPE"));
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new F[Factory]TypeActions(AssetCategoryBit)));
 }
 
