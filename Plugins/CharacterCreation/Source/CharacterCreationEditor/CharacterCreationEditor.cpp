@@ -22,6 +22,7 @@
 //#include "TypeActions/CharacterCreatorGroomSlotTypeActions.h"
 
 #include "TypeActions/CharacterCreatorOutfitsSetTypeActions.h"
+#include "TypeActions/CharacterCreatorAttachedMeshTypeActions.h"
 #include "TypeActions/CharacterCreatorOutfitTypeActions.h"
 #include "TypeActions/CharacterCreatorOutfitSlotTypeActions.h"
 #include "TypeActions/CharacterCreatorModelTypeActions.h"
@@ -141,6 +142,7 @@ public:
 			RegisterAssetTypeAction(AssetTools, MakeShareable(new FCharacterCreatorColorsSetTypeActions(AssetCategoryBit)));
 			//RegisterAssetTypeAction(AssetTools, MakeShareable(new FCharacterCreatorOutfitSlotTypeActions(AssetCategoryBit)));
 
+			RegisterAssetTypeAction(AssetTools, MakeShareable(new FCharacterCreatorAttachedMeshTypeActions(AssetCategoryBit)));
 			RegisterAssetTypeAction(AssetTools, MakeShareable(new FCharacterCreatorOutfitTypeActions(AssetCategoryBit)));
 			RegisterAssetTypeAction(AssetTools, MakeShareable(new FCharacterCreatorOutfitsSetTypeActions(AssetCategoryBit)));
 			RegisterAssetTypeAction(AssetTools, MakeShareable(new FCharacterCreatorOutfitSlotTypeActions(AssetCategoryBit)));

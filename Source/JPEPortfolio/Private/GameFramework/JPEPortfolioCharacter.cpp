@@ -5,6 +5,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CharacterCreatorComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
 #include "EnhancedInputComponent.h"
@@ -22,7 +23,7 @@ AJPEPortfolioCharacter::AJPEPortfolioCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-		
+
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -60,6 +61,12 @@ AJPEPortfolioCharacter::AJPEPortfolioCharacter()
 	FocusableComp->OnStartFocusDelegate.AddDynamic(this, &AJPEPortfolioCharacter::OnStartFocus);
 	FocusableComp->OnEndFocusDelegate.AddDynamic(this, &AJPEPortfolioCharacter::OnEndFocus);
 
+	//Add tags to search by CharacterCreatorComp
+	GetMesh()->ComponentTags.Add("RootSkeletalMesh");
+	GetMesh()->ComponentTags.Add("Torso");
+
+	CharacterCreatorComp = CreateDefaultSubobject<UCharacterCreatorComponent>(TEXT("CharacterCreatorComp"));
+	CharacterCreatorComp->SetRootSkeletalMesh(GetMesh());
 }
 
 void AJPEPortfolioCharacter::Restart()
@@ -74,6 +81,7 @@ void AJPEPortfolioCharacter::Restart()
 			FocusTracerHUD->ShowFocusTraceInterface();
 		}
 	}
+	CharacterCreatorComp->ReloadCurrentCharacterCreatorWithAsyncLoad();
 }
 
 void AJPEPortfolioCharacter::PossessedBy(AController* NewController)

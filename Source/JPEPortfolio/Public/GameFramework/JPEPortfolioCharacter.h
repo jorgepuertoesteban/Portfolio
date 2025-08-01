@@ -12,6 +12,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInputAction;
 class UFocusableComponent;
+class UCharacterCreatorComponent;
 class UDecalComponent;
 struct FInputActionValue;
 
@@ -39,6 +40,9 @@ class AJPEPortfolioCharacter :
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Focus, meta = (AllowPrivateAccess = "true"))
 	UFocusableComponent* FocusableComp;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Focus, meta = (AllowPrivateAccess = "true"))
+	UCharacterCreatorComponent* CharacterCreatorComp;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Focus, meta = (AllowPrivateAccess = "true"))
 	UDecalComponent* FocusedDecalComp;

@@ -10,12 +10,14 @@
 class UCharacterCreatorAttributesSet;
 class UCharacterCreatorAttribute;
 class UCharacterCreatorPoseAttribute;
+class UCharacterCreatorAttachedMesh;
 class UCharacterCreatorOutfit;
 class UCharacterCreatorOutfitSlot;
 class UCharacterCreatorVectorMatAttribute;
 class UCharacterCreatorGroom;
 class UCharacterCreatorModel;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnCharacterCreatorAttachedMeshChanged, const UCharacterCreatorAttachedMesh*, AttachedMesh, FName, SlotName, const int32, MaterialVariantIndex);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnCharacterCreatorOutfitChanged, const UCharacterCreatorOutfit*, Outfit, FName, SlotName, const int32, MaterialVariantIndex);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnCharacterCreatorGroomChanged, const UCharacterCreatorGroom*, Groom, FName, SlotName);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCharacterCreatorBodyTypeChanged, const FCharacterCreationBodyType, NewBodyType);
@@ -44,6 +46,9 @@ public:
 	FName RootSkeletalMeshTag = TEXT("RootSkeletalMesh");
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = CharacterCreator)
+	TArray<FCCSlotAndAttachedMesh> SlotAndAttachedMeshArray;
+
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = CharacterCreator)
 	TArray<FCCSlotAndOutfit> SlotAndOutfitArray;
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = CharacterCreator)
@@ -66,6 +71,9 @@ public:
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = CharacterCreator)
 	UCharacterCreatorModel* Model;
+	
+	UPROPERTY(Transient)
+	FOnCharacterCreatorAttachedMeshChanged OnAttachedMeshChangedDelegate;
 
 	UPROPERTY(Transient)
 	FOnCharacterCreatorOutfitChanged OnOutfitChangedDelegate;
@@ -143,6 +151,21 @@ public:
 	void Multicast_MaterialAttributeAffectedSlotChanged(const UCharacterCreatorMatAttribute* CCAttribute, const UCharacterCreatorOutfitSlot* Slot, bool NewValue);
 
 	UFUNCTION(BlueprintCallable)
+	const UCharacterCreatorAttachedMesh* GetSelectedAttachedMesh(const UCharacterCreatorOutfitSlot* OutfitSlot) const;
+
+	UFUNCTION(BlueprintCallable)
+	void SetAttachedMesh(const UCharacterCreatorAttachedMesh* AttachedMesh, const int32 MaterialVariantIndex = -1);
+
+	UFUNCTION(BlueprintCallable)
+	bool IsUsingAttachedMesh(const UCharacterCreatorAttachedMesh* AttachedMesh, const int32 MaterialVariantIndex = -1) const;
+
+	UFUNCTION(BlueprintCallable)
+	void ClearAttachedMeshSlot(const UCharacterCreatorOutfitSlot* OutfitSlot);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_AttachedMeshChanged(const UCharacterCreatorAttachedMesh* AttachedMesh, FName SlotName, const int32 MaterialVariantIndex = -1);
+
+	UFUNCTION(BlueprintCallable)
 	const UCharacterCreatorOutfit* GetSelectedOutfit(const UCharacterCreatorOutfitSlot* OutfitSlot) const;
 
 	UFUNCTION(BlueprintCallable)
@@ -177,17 +200,5 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_CharacterCreatorMaterialVariantIndex(int32 NewIndex);
-
-	
-	// Overrides
-	/*
-	virtual bool IsNameStableForNetworking() const override;
-	virtual void PreNetReceive() override;
-	virtual void PostNetReceive() override;*/
-
-	//UFUNCTION()
-	//void OnRepSlotAndOutfitArray();
-	//
-
 
 };

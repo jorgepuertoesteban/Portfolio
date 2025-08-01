@@ -11,6 +11,7 @@
 class USkeletalMeshComponent;
 class USkeletalMesh;
 class UCharacterCreatorOutfitSlot;
+class UCharacterCreatorAttachedMesh;
 class UCharacterCreatorOutfit;
 class UCharacterCreatorGroom;
 class UCharacterCreatorAttribute;
@@ -35,6 +36,26 @@ struct CHARACTERCREATION_API FDuplicatedSkeletalMesh
 
 	FDuplicatedSkeletalMesh(): Original(nullptr), Duplication(nullptr){}
 	FDuplicatedSkeletalMesh(const USkeletalMesh* NewOriginal, USkeletalMesh* NewDuplication): Original(NewOriginal), Duplication(NewDuplication){}
+};
+
+USTRUCT(BlueprintType)
+struct CHARACTERCREATION_API FCCSlotAndAttachedMesh
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CharacterCreator)
+	const UCharacterCreatorOutfitSlot* Slot;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CharacterCreator)
+	const UCharacterCreatorAttachedMesh* Mesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CharacterCreator)
+	int32 MaterialVariantIndex = INDEX_NONE;
+
+	
+	FCCSlotAndAttachedMesh() : Slot(nullptr), Mesh(nullptr) {}
+
+	FCCSlotAndAttachedMesh(const UCharacterCreatorOutfitSlot* NewSlot, const UCharacterCreatorAttachedMesh* NewValue, const int32 NewMaterialVariantIndex) : Slot(NewSlot), Mesh(NewValue), MaterialVariantIndex(NewMaterialVariantIndex){}
 };
 
 USTRUCT(BlueprintType)

@@ -7,6 +7,7 @@
 #include "CharacterCreatorMatAttribute.h"
 #include "CharacterCreatorVectorMatAttribute.h"
 #include "CharacterCreatorPoseAttribute.h"
+#include "CharacterCreatorAttachedMesh.h"
 #include "CharacterCreatorOutfit.h"
 #include "CharacterCreatorGroom.h"
 #include "CharacterCreatorOutfitSlot.h"
@@ -16,6 +17,7 @@
 void UCharacterCreator::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UCharacterCreator, SlotAndAttachedMeshArray);
 	DOREPLIFETIME(UCharacterCreator, SlotAndOutfitArray);
 	DOREPLIFETIME(UCharacterCreator, SlotAndGroomArray);
 	DOREPLIFETIME(UCharacterCreator, AttributeValues);
@@ -99,6 +101,7 @@ float UCharacterCreator::ValueOf(const UCharacterCreatorMatAttribute* CCAttribut
 
 void UCharacterCreator::ClearCharacterCreator()
 {
+	SlotAndAttachedMeshArray.Empty();
 	SlotAndOutfitArray.Empty();
 	SlotAndGroomArray.Empty();
 	AttributeValues.Empty();
@@ -282,6 +285,94 @@ void UCharacterCreator::Multicast_MaterialAttributeAffectedSlotChanged_Implement
 	}
 	//OnMaterialAttributeChangedDelegate.Broadcast(MaterialAttribute, NewValue);
 }
+
+const UCharacterCreatorAttachedMesh* UCharacterCreator::GetSelectedAttachedMesh(const UCharacterCreatorOutfitSlot* OutfitSlot) const
+{
+	for (const FCCSlotAndAttachedMesh& SlotAndAttachedMesh : SlotAndAttachedMeshArray)
+	{
+		if (SlotAndAttachedMesh.Slot == OutfitSlot)
+		{
+			return SlotAndAttachedMesh.Mesh;
+		}
+	}
+	return nullptr;
+}
+
+void UCharacterCreator::SetAttachedMesh(const UCharacterCreatorAttachedMesh* AttachedMesh, const int32 MaterialVariantIndex)
+{
+	bool bIsFound = false;
+
+	if (!AttachedMesh || !AttachedMesh->Slot)
+	{
+		UE_LOG(CharacterCreationLog, Error, TEXT("UCharacterCreator::SetAttachedMesh AttachedMesh or AttachedMesh->Slot is/are null"));
+		return;
+	}
+
+	for (FCCSlotAndAttachedMesh& SlotAndAttachedMesh : SlotAndAttachedMeshArray)
+	{
+		if (SlotAndAttachedMesh.Slot == AttachedMesh->Slot)
+		{
+			SlotAndAttachedMesh.Mesh = AttachedMesh;
+			bIsFound = true;
+			SlotAndAttachedMesh.MaterialVariantIndex = MaterialVariantIndex;
+			break;
+		}
+	}
+	if (!bIsFound)
+	{
+		SlotAndAttachedMeshArray.Emplace(AttachedMesh->Slot, AttachedMesh, MaterialVariantIndex); //We create a new entry otherwise
+	}
+
+	Multicast_AttachedMeshChanged(AttachedMesh, FName(AttachedMesh->Slot->Name), MaterialVariantIndex);
+}
+
+bool UCharacterCreator::IsUsingAttachedMesh(const UCharacterCreatorAttachedMesh* AttachedMesh, const int32 MaterialVariantIndex) const
+{
+	if (AttachedMesh == nullptr)
+	{
+		return false;
+	}
+	for (const FCCSlotAndAttachedMesh& SlotAndAttachedMesh : SlotAndAttachedMeshArray)
+	{
+		if (SlotAndAttachedMesh.Mesh == AttachedMesh && (MaterialVariantIndex == INDEX_NONE || SlotAndAttachedMesh.MaterialVariantIndex == MaterialVariantIndex))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void UCharacterCreator::ClearAttachedMeshSlot(const UCharacterCreatorOutfitSlot* OutfitSlot)
+{
+	bool bIsFound = false;
+	if (!OutfitSlot)
+	{
+		UE_LOG(CharacterCreationLog, Error, TEXT("UCharacterCreator::ClearAttachedMeshSlot OutfitSlot is null"));
+		return;
+	}
+	for (FCCSlotAndAttachedMesh& SlotAndAttachedMesh : SlotAndAttachedMeshArray)
+	{
+		if (SlotAndAttachedMesh.Slot == OutfitSlot)
+		{
+			SlotAndAttachedMesh.Mesh = nullptr;
+			SlotAndAttachedMesh.MaterialVariantIndex = INDEX_NONE;
+			bIsFound = true;
+			break;
+		}
+	}
+	if (!bIsFound)
+	{
+		SlotAndAttachedMeshArray.Emplace(OutfitSlot, nullptr, INDEX_NONE);
+	}
+
+	Multicast_AttachedMeshChanged(nullptr, FName(OutfitSlot->Name), INDEX_NONE);
+}
+
+void UCharacterCreator::Multicast_AttachedMeshChanged_Implementation(const UCharacterCreatorAttachedMesh* AttachedMesh, FName SlotName, const int32 MaterialVariantIndex)
+{
+	OnAttachedMeshChangedDelegate.Broadcast(AttachedMesh, SlotName, MaterialVariantIndex);
+}
+
 
 const UCharacterCreatorOutfit* UCharacterCreator::GetSelectedOutfit(const UCharacterCreatorOutfitSlot* Slot) const
 {

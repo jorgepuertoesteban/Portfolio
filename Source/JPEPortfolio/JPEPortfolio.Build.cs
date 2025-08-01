@@ -15,7 +15,8 @@ public class JPEPortfolio : ModuleRules
 			"InputCore",
 			"EnhancedInput",
 			"UMG",
-            "FocusInteractions"
+            "FocusInteractions",
+            "CharacterCreation"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

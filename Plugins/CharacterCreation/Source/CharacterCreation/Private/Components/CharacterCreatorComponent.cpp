@@ -3,9 +3,11 @@
 
 #include "Components/CharacterCreatorComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "CharacterCreator.h"
 #include "CharacterCreatorGroom.h"
 #include "CharacterCreatorOutfit.h"
+#include "CharacterCreatorAttachedMesh.h"
 #include "GroomBindingAsset.h"
 #include "GroomComponent.h"
 #include "GroomAsset.h"
@@ -133,6 +135,91 @@ UGroomComponent* UCharacterCreatorComponent::FindOrCreateGroomComponent(const UC
 	}
 
 	return GroomComp;
+}
+
+void UCharacterCreatorComponent::SetAttachedMesh(const UCharacterCreatorAttachedMesh* NewAttachedMesh, FName SlotName, const int32 MaterialVariantsIndex)
+{
+	if (!NewAttachedMesh)
+	{
+		UE_LOG(CharacterCreationLog, Error, TEXT("UCharacterCreatorComponent::SetAttachedMesh: NewAttachedMesh is not valid"));
+		return;
+	}
+
+	if (!RootSkeletalMesh)
+	{
+		//If we can't find a RootSkeletalMesh 
+		UE_LOG(CharacterCreationLog, Error, TEXT("UCharacterCreatorComponent::SetAttachedMesh(): Imposible to find a RootSkeletalMesh for the CharacterCreatorComponent"));
+		return;
+	}
+
+	UStaticMeshComponent* StComp = SlotStMeshMap.FindRef(NewAttachedMesh->Slot);
+	if (!StComp)
+	{
+		if (NewAttachedMesh->Slot->bSpawnsComponent)
+		{
+			UStaticMeshComponent* CreatedStComp = NewObject<UStaticMeshComponent>(GetOwner(), UStaticMeshComponent::StaticClass(), SlotName, EObjectFlags::RF_Transient);
+			StComp = CreatedStComp;
+			StComp->ComponentTags.Add(DynamicCharacterCreatorComponentTag);
+			GetOwner()->AddInstanceComponent(StComp);
+			StComp->SetWorldTransform(FTransform::Identity);
+			StComp->AttachToComponent(RootSkeletalMesh, FAttachmentTransformRules::KeepRelativeTransform, NewAttachedMesh->AttachedMeshName);
+			StComp->OnComponentCreated();
+			StComp->RegisterComponent();
+
+			StComp->SetComponentTickEnabled(false);
+			StComp->bReceivesDecals = false;
+
+			for (const FName& Tag : NewAttachedMesh->Slot->Tags)
+			{
+				StComp->ComponentTags.Add(Tag);
+			}
+			StComp->ComponentTags.Add(NewAttachedMesh->Slot->NonSpawnedComponentTag); //Maybe we shouldn't include this one?
+		}
+		else
+		{
+			for (UActorComponent* OwnerComp : GetOwner()->GetComponents())
+			{
+				if (UStaticMeshComponent* OwnerStComp = Cast<UStaticMeshComponent>(OwnerComp))
+				{
+					if (FCharacterCreationModule::CharacterCreationDebugVar > 0)
+					{
+						UE_LOG(CharacterCreationLog, Log, TEXT("UCharacterCreatorComponent::SetAttachedMesh: tag:[%s] Class: [%s] UStaticMeshComponent to Check [%s]"), *NewAttachedMesh->Slot->NonSpawnedComponentTag.ToString(), *GetOwner()->GetName(), *OwnerComp->GetName());
+					}
+
+					if (OwnerComp->ComponentHasTag(NewAttachedMesh->Slot->NonSpawnedComponentTag))
+					{
+						if (FCharacterCreationModule::CharacterCreationDebugVar > 0)
+						{
+							UE_LOG(CharacterCreationLog, Log, TEXT("UCharacterCreatorComponent::SetAttachedMesh: tag:[%s] Class: [%s] Found "), *NewAttachedMesh->Slot->NonSpawnedComponentTag.ToString(), *GetOwner()->GetName());
+						}
+
+						StComp = OwnerStComp;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	SlotStMeshMap.Add(NewAttachedMesh->Slot, StComp);
+	SlotMeshMap.Add(NewAttachedMesh->Slot, StComp);
+
+	const TSoftObjectPtr<UStaticMesh> SoftStaticMesh = NewAttachedMesh->Mesh;
+	const FSoftObjectPath SoftObjectPath = SoftStaticMesh.ToSoftObjectPath();
+
+	TWeakObjectPtr<UCharacterCreatorComponent> ThisWeak = this;
+	TWeakObjectPtr<UStaticMeshComponent> StCompWeak = StComp;
+	TWeakObjectPtr<const UCharacterCreatorAttachedMesh> NewAttachedMeshWeak = NewAttachedMesh;
+
+	UAssetManager::GetStreamableManager().RequestAsyncLoad(SoftObjectPath, [this, ThisWeak, StCompWeak, NewAttachedMeshWeak, SoftStaticMesh, MaterialVariantsIndex]()
+		{
+			if (!ThisWeak.IsValid() || !StCompWeak.IsValid() || !NewAttachedMeshWeak.IsValid() || !SoftStaticMesh.Get())
+			{
+				return;
+			}
+			StCompWeak->SetStaticMesh(SoftStaticMesh.Get());
+			OnAttachedMeshChanged.Broadcast(StCompWeak.Get());
+		});
 }
 
 void UCharacterCreatorComponent::SetOutfit(const UCharacterCreatorOutfit* NewOutfit, FName SlotName, const int32 MaterialVariantsIndex /*= 0*/)
@@ -832,6 +919,15 @@ void UCharacterCreatorComponent::ReloadCurrentCharacterCreator()
 			SetOutfit(SlotAndOutfit.Outfit, FName(SlotAndOutfit.Slot->Name), SlotAndOutfit.MaterialVariantIndex);
 		}
 
+		for (const FCCSlotAndAttachedMesh& SlotAndAttachedMesh : CharacterCreator->SlotAndAttachedMeshArray)
+		{
+			if (SlotAndAttachedMesh.Slot == nullptr)
+			{
+				continue;
+			}
+			SetAttachedMesh(SlotAndAttachedMesh.Mesh, FName(SlotAndAttachedMesh.Slot->Name), SlotAndAttachedMesh.MaterialVariantIndex);
+		}
+
 		// for (const FCCSlotAndGroom& SlotAndGroom : CharacterCreator->SlotAndGroomArray)
 		// {
 		// 	SetGroom(SlotAndGroom.Groom, FName(SlotAndGroom.Slot->Name));
@@ -944,6 +1040,14 @@ void UCharacterCreatorComponent::ReloadCurrentCharacterCreatorWithAsyncLoad()
 			}
 			OutfitLoadAsync(AssetsToStream, SlotAndOutfit.Outfit, FName(SlotAndOutfit.Slot->Name), SlotAndOutfit.MaterialVariantIndex);
 		}
+		for (const FCCSlotAndAttachedMesh& SlotAndAttachedMesh : CharacterCreator->SlotAndAttachedMeshArray)
+		{
+			if (!SlotAndAttachedMesh.Mesh)
+			{
+				continue;
+			}
+			AssetsToStream.Add(SlotAndAttachedMesh.Mesh->Mesh.ToSoftObjectPath());
+		}
 	}
 
 	if (ItemStreamingHandle.IsValid() && ItemStreamingHandle->IsLoadingInProgress())
@@ -965,6 +1069,15 @@ void UCharacterCreatorComponent::ReloadCurrentCharacterCreatorWithAsyncLoad()
 					continue;
 				}
 				StrongThis->SetOutfitLoadedAsset(SlotAndOutfit.Outfit, FName(SlotAndOutfit.Slot->Name), SlotAndOutfit.MaterialVariantIndex);
+			}
+
+			for (const FCCSlotAndAttachedMesh& SlotAndAttachedMesh : StrongThis->CharacterCreator->SlotAndAttachedMeshArray)
+			{
+				if (SlotAndAttachedMesh.Slot == nullptr)
+				{
+					continue;
+				}
+				StrongThis->SetAttachedMeshLoadedAsset(SlotAndAttachedMesh.Mesh, FName(SlotAndAttachedMesh.Slot->Name), SlotAndAttachedMesh.MaterialVariantIndex);
 			}
 		}
 	});
@@ -1083,6 +1196,78 @@ void UCharacterCreatorComponent::OutfitLoadAsync(TArray<FSoftObjectPath>& Assets
 			}
 		}
 	}
+}
+
+void UCharacterCreatorComponent::SetAttachedMeshLoadedAsset(const UCharacterCreatorAttachedMesh* NewAttachedMesh, FName SlotName, const int32 MaterialVariantsIndex)
+{
+	if (!NewAttachedMesh)
+	{
+		UE_LOG(CharacterCreationLog, Error, TEXT("UCharacterCreatorComponent::SetAttachedMesh: NewAttachedMesh is not valid"));
+		return;
+	}
+
+	if (!RootSkeletalMesh)
+	{
+		//If we can't find a RootSkeletalMesh 
+		UE_LOG(CharacterCreationLog, Error, TEXT("UCharacterCreatorComponent::SetAttachedMesh(): Imposible to find a RootSkeletalMesh for the CharacterCreatorComponent"));
+		return;
+	}
+
+	UStaticMeshComponent* StComp = SlotStMeshMap.FindRef(NewAttachedMesh->Slot);
+	if (!StComp)
+	{
+		if (NewAttachedMesh->Slot->bSpawnsComponent)
+		{
+			UStaticMeshComponent* CreatedStComp = NewObject<UStaticMeshComponent>(GetOwner(), UStaticMeshComponent::StaticClass(), SlotName, EObjectFlags::RF_Transient);
+			StComp = CreatedStComp;
+			StComp->ComponentTags.Add(DynamicCharacterCreatorComponentTag);
+			GetOwner()->AddInstanceComponent(StComp);
+			StComp->SetWorldTransform(FTransform::Identity);
+			StComp->AttachToComponent(RootSkeletalMesh, FAttachmentTransformRules::KeepRelativeTransform, NewAttachedMesh->AttachedMeshName);
+			StComp->OnComponentCreated();
+			StComp->RegisterComponent();
+
+			StComp->SetComponentTickEnabled(false);
+			StComp->bReceivesDecals = false;
+
+			for (const FName& Tag : NewAttachedMesh->Slot->Tags)
+			{
+				StComp->ComponentTags.Add(Tag);
+			}
+			StComp->ComponentTags.Add(NewAttachedMesh->Slot->NonSpawnedComponentTag); //Maybe we shouldn't include this one?
+		}
+		else
+		{
+			for (UActorComponent* OwnerComp : GetOwner()->GetComponents())
+			{
+				if (UStaticMeshComponent* OwnerStComp = Cast<UStaticMeshComponent>(OwnerComp))
+				{
+					if (FCharacterCreationModule::CharacterCreationDebugVar > 0)
+					{
+						UE_LOG(CharacterCreationLog, Log, TEXT("UCharacterCreatorComponent::SetAttachedMesh: tag:[%s] Class: [%s] UStaticMeshComponent to Check [%s]"), *NewAttachedMesh->Slot->NonSpawnedComponentTag.ToString(), *GetOwner()->GetName(), *OwnerComp->GetName());
+					}
+
+					if (OwnerComp->ComponentHasTag(NewAttachedMesh->Slot->NonSpawnedComponentTag))
+					{
+						if (FCharacterCreationModule::CharacterCreationDebugVar > 0)
+						{
+							UE_LOG(CharacterCreationLog, Log, TEXT("UCharacterCreatorComponent::SetAttachedMesh: tag:[%s] Class: [%s] Found "), *NewAttachedMesh->Slot->NonSpawnedComponentTag.ToString(), *GetOwner()->GetName());
+						}
+
+						StComp = OwnerStComp;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	SlotStMeshMap.Add(NewAttachedMesh->Slot, StComp);
+	SlotMeshMap.Add(NewAttachedMesh->Slot, StComp);
+
+	UStaticMesh* StaticMesh = NewAttachedMesh->Mesh.Get();
+	StComp->SetStaticMesh(StaticMesh);
+	OnAttachedMeshChanged.Broadcast(StComp);
 }
 
 void UCharacterCreatorComponent::SetOutfitLoadedAsset(const UCharacterCreatorOutfit* NewOutfit, FName SlotName, const int32 MaterialVariantsIndex /*= 0*/)

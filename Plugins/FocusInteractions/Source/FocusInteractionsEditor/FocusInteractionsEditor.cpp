@@ -22,7 +22,7 @@ void FFocusInteractionsEditorModule::StartupModule()
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
-	EAssetTypeCategories::Type AssetCategoryBit = AssetTools.RegisterAdvancedAssetCategory(FName(TEXT("JPEEditor")), LOCTEXT("BionicApeEditor", "Jorge Puerto"));
+	EAssetTypeCategories::Type AssetCategoryBit = AssetTools.RegisterAdvancedAssetCategory(FName(TEXT("JPEEditor")), LOCTEXT("JPEEditor", "Jorge Puerto"));
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FActionTypeAssetTypeAction(AssetCategoryBit)));
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FActionableTypeAssetTypeAction(AssetCategoryBit)));
 	AssetTools.RegisterAssetTypeActions(MakeShareable(new FActionSequencesTypeActions(AssetCategoryBit)));

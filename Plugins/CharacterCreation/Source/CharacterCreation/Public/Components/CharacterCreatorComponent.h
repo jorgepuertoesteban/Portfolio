@@ -10,10 +10,12 @@
 #include "CharacterCreatorComponent.generated.h"
 
 class UCharacterCreator;
+class UStaticMeshComponent;
 class USkeletalMeshComponent;
 class UGroomComponent;
 class UCharacterCreatorVectorMatAttribute;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttachedMeshChanged, UMeshComponent*, MeshComponent);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnOutfitChanged, UMeshComponent*, MeshComponent);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGroomChanged, UMeshComponent*, MeshComponent);
 
@@ -40,6 +42,9 @@ protected:
 	
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "CharacterCreator")
 	UCharacterCreator* CharacterCreatorLastUsed = nullptr;
+	
+	UPROPERTY(Transient, BlueprintReadOnly)
+	TMap<const UCharacterCreatorOutfitSlot*, UStaticMeshComponent*> SlotStMeshMap;
 
 	UPROPERTY(Transient, BlueprintReadOnly)
 	TMap<const UCharacterCreatorOutfitSlot*, USkeletalMeshComponent*> SlotSKMeshMap;
@@ -66,6 +71,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterCreator")
 	TSubclassOf<USkeletalMeshComponent> SkeletalMeshClass = USkeletalMeshComponent::StaticClass();
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterCreator")
+	bool bSearchStaticMeshesInActor = false;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterCreator")
 	bool bSearchSkeletalMeshesInActor = false;
@@ -85,6 +93,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "CharacterCreator")
 	USkeletalMeshComponent* FaceSkeletalMesh = nullptr;
 	
+	UPROPERTY(BlueprintAssignable)
+	FOnAttachedMeshChanged OnAttachedMeshChanged;
+
 	UPROPERTY(BlueprintAssignable)
 	FOnOutfitChanged OnOutfitChanged;
 
@@ -129,6 +140,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCreator")
 	bool IsUsingOutfit(const UCharacterCreatorOutfit* Outfit, const int32 MaterialVariantIndex = -1) const;
+	
+	UFUNCTION(BlueprintCallable, Category = "CharacterCreator")
+	void SetAttachedMesh(const UCharacterCreatorAttachedMesh* AttachedMesh, FName SlotName, const int32 MaterialVariantsIndex = -1);
 
 	UFUNCTION(BlueprintCallable, Category = "CharacterCreator")
 	void SetOutfit(const UCharacterCreatorOutfit* NewOutfit, FName SlotName, const int32 MaterialVariantsIndex = -1);
@@ -209,6 +223,7 @@ private:
 	void SetDefaultRootSkeletalMesh();
 
 	void OutfitLoadAsync(TArray<FSoftObjectPath>& AssetsToStream, const UCharacterCreatorOutfit* NewOutfit, FName SlotName, const int32 MaterialVariantsIndex = -1);
+	void SetAttachedMeshLoadedAsset(const UCharacterCreatorAttachedMesh* NewAttachedMesh, FName SlotName, const int32 MaterialVariantsIndex = -1);
 	void SetOutfitLoadedAsset(const UCharacterCreatorOutfit* NewOutfit, FName SlotName, const int32 MaterialVariantsIndex = -1);
 	void SetGroomLoadedAsset(const UCharacterCreatorGroom* NewGroom, const FName& SlotName);
 
